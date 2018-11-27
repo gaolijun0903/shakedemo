@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <style>
+        	html,body{
+        		width: 100%;
+        		height: 100%;
+        		overflow: auto;
+        	}
+        	body{
+        		background: url(https://i2.yongche.name/media/g4/M04/04/1A/rBEDBVv2fvmIcp-dAAH4OKvvHK4AABuZgJ_geAAAfhQ254.png) no-repeat;
+        		background-size: 100% 100%;
+        	}
+        	.shakeimg{
+        		width: 30%;
+        		height: 30%;
+        		margin: 30% auto;
+        		display: block;
+        	}
+        	#numberCount{
+        		position: fixed;
+        		top: 100px;
+        		margin: auto;
+        	}
+        	
+        	
+        	
+.animated {
+  animation-name:shake; /*动画的名称*/
+  animation-duration: 1s; /*动画时间*/
+  animation-fill-mode: both; /*播放后的状态*/
+  animation-iteration-count: infinite; /*动作循环的次数：infinite 无限循环*/
+}
+
+ 
+@keyframes shake{
+  0%,
+  100%,
+  20%,
+  50%,
+  80% {
+  transition-timing-function: cubic-bezier(0.215,.61,.355,1); /*贝塞尔曲线 ： X1 Y1 X2 Y2*/
+  transform:rotateZ(0deg);
+  }
+  40%,
+  43%{
+  transition-timing-function: cubic-bezier(0.755,0.50,0.855,0.060);
+  transform:rotateZ(30deg);
+  }
+  70%{
+  transition-timing-function: cubic-bezier(0.755,0.050,0.855,0.060);
+  transform:rotateZ(30deg);
+  }
+  90%{
+  transform:rotateZ(0deg);
+  }
+}
+        </style>
+    </head>
+    <body>
+    		<img class="shakeimg animated"" src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1542891569863&di=336042cdced9bf9bf3dc6a47444a9324&imgtype=jpg&src=http%3A%2F%2Fimg3.imgtn.bdimg.com%2Fit%2Fu%3D3409006168%2C424402868%26fm%3D214%26gp%3D0.jpg" />
+        <div id="numberCount">你摇了0次</div>   
+    
+
+    </body>
+    <script>
+//  	<!-- 摇一摇的声音 -->
+//	<audio src="mp3/shakingAudio.mp3" preload="preload" id="shakingAudio"></audio>
+//  <!-- 摇到红包的声音 -->
+//  <audio src="mp3/shakingResult.mp3" preload="preload" id="shakingResult"></audio>
+
+//  $(function(){
+//	      //一般android机都能自动播放
+//	     $('#shakingAudio').play();
+//	     //处理iphone不能自动播放 //利用微信WeixinJSBridgeReady事件，这个是微信浏览器自带提供的事件，微信ready()之后播放。
+//	     document.addEventListener('WeixinJSBridgeReady',function(){
+//	         $('#shakingAudio').play();
+//	     },false);
+//	});
+	var SHAKE_THRESHOLD=4000,  //设置了阀值4000（就是当加速度达到了这个值的时候，就触发了摇一摇的程序）
+       last_update=0,   //上一次触发的时间
+       x=y=z=last_x=last_y=last_z=0,  //x,y,z当前加速度,last_z,last_x,last_y上次加速度
+       count=0,   //摇动次数计数器
+       numMax=10;  //可抽奖的次数
+           
+    listenPhoneShake();
+    //监听摇一摇的动作
+    function listenPhoneShake() {
+        if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', deviceMotionHandler,false);
+            console.log("addEventListener devicemotion");
+        } else {
+            alert('抱歉，你的手机配置实在有些过不去，考虑换个新的再来试试吧');
+        }
+    }
+
+      
+    // --检测设备是否有摇一摇动作
+    function deviceMotionHandler(eventData) {
+        var acceleration = eventData.accelerationIncludingGravity;// 获取设备的加速度
+        var curTime = new Date().getTime();  //获取当前时间
+      	//每100毫秒进行一次获取和判断加速度 X,Y,Z
+        if ((curTime - last_update) > 100) {
+            var diffTime = curTime - last_update;
+            last_update = curTime;
+            x = acceleration.x;// 获取加速度的x轴，用于计算水平水平加速度 //注意:返回的X,Y,Z的属性值的单位是m/s^2
+            y = acceleration.y;
+            z = acceleration.z;
+            var speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000;  
+            //var speed = Math.sqrt( ( x - lastX ) * ( x - lastX ) + ( y - lastY ) * ( y - lastY ) +  ( z - lastZ ) * ( z - lastZ ) ) / diffTime * 10000   //该方法更科学
+ 
+            if (speed > SHAKE_THRESHOLD) {//求的某一次的加速speed是否达到了阀值
+                handleShakingMotion();
+            }
+            last_x = x;
+            last_y = y;
+            last_z = z;
+        }
+    }
+
+    // 设备有摇一摇动作，则对页面已摇次数进行加1，若已经摇到最大次数numMax，则请求抢红包接口
+    function handleShakingMotion() {
+        count++;
+        // 添加摇一摇的声音
+        //$('#shakingAudio').trigger('play');
+        document.getElementById("numberCount").innerHTML =  "你摇了"+count+"次" ;
+        if (count >= numMax) {//
+            count = 0;
+            vibrate();
+            // 关闭摇一摇的接口
+            window.removeEventListener("devicemotion", deviceMotionHandler);
+            // 添加摇到红包的声音
+            //$('#shakingResult').trigger('play'); 
+            // 摇一摇结束之后，请求抢红包接口
+            //drawRedbag(openid);
+        }
+    }
+	//手机震动   
+	function vibrate(){
+		if(window.navigator.vibrate){
+			window.navigator.vibrate(1500) // 震动2s
+//			window.navigator.vibrate([
+//  				100,30,100,30,100,200,200,30,
+//      			200,30,200,200,100,30,100,30,100]); // 震动出莫尔斯电码的"SOS"效果
+		}else{
+			alert('不支持震动？')
+		}
+	}
+	    
+
+//测试的时候发现安卓vivo NEX和小米5这两款手机摇不了（其他的8.0没试过），ios没问题，
+//后面发现是这两台手机devicemotion这个事件没有被监听，并且这两台手机都是8.0以上的
+//if(get_android_version<8.0){
+//	window.addEventListener('deviceorientation', DeviceOrientationHuawei, false);
+//}
+//var count = 0;
+//var max = 45;
+//function DeviceOrientationHuawei(event) {
+//  var alpha = event.alpha, //水平旋转
+//    beta = event.beta, //上下旋转
+//    gamma = event.gamma; //左右旋转
+//    console.log(count, beta, gamma, alpha)
+//  if (alpha != null || beta != null || gamma != null) {
+//    if (gamma > 65|| beta >65|| beta < -50|| alpha>120 && alpha <290) {
+//      count++;
+//      if (count >= max) {
+//        count = 0;
+//       alert('恭喜你，喜提一枚小萝莉')
+//      }
+//    } 
+//  } 
+//}
+//获取安卓版本
+//function get_android_version() {
+//  var ua = navigator.userAgent.toLowerCase();
+//  var version = null;
+//  if (ua.indexOf("android") > 0) {
+//      var reg = /android [\d._]+/gi;
+//      var v_info = ua.match(reg);
+//      version = (v_info + "").replace(/[^0-9|_.]/ig, "").replace(/_/ig, "."); //得到版本号4.2.2
+//      version = version.slice(0,3);// 得到版本号第一位
+//  }
+//		return version;
+//}
+
+    </script>
+</html>
